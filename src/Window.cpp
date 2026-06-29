@@ -28,9 +28,13 @@ void Window::Display()
 
 	ImGui::Begin("Display");
 	ImVec2 space = ImGui::GetContentRegionAvail();
-
 	ImGui::Image((ImTextureID)(intptr_t)screenTexture.texture.id, space);
 	ImGui::End();
+
+	DrawRegisters();
+	DrawMemory();
+	DrawHistory();
+	DrawControls();
 
 	rlImGuiEnd();
 
@@ -56,4 +60,120 @@ void Window::Keys()
 	{
 		chip->SetKey(key.chipKey, IsKeyDown(key.raylibKey));
 	}
+}
+
+void Window::DrawRegisters()
+{
+	ImGui::Begin("Registers");
+	for (int i = 0; i < 16; i++)
+	{
+		ImGui::Text("V%X: 0x%02X (%d)", i, chip->GetRegisters()[i], chip->GetRegisters()[i]);
+	}
+
+	ImGui::Separator();
+
+	ImGui::Text("PC: 0x%04X", chip->GetPC());
+	ImGui::Text("I : 0x%04X", chip->GetIndex());
+	ImGui::End();
+}
+
+void Window::DrawMemory()
+{
+	ImGui::Begin("Memory");
+
+	ImGui::BeginChild("MemoryScrollRegion", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
+	const uint8_t* mem = chip->GetMemory();
+
+	for (int row = 5; row < 256; row++)
+	{
+		int base = row * 16;
+		ImGui::Text("%04X:", base);
+		ImGui::SameLine();
+
+		for (int i = 0; i < 16; i++)
+		{
+			ImGui::SameLine();
+			ImGui::Text("%02X", mem[base + i]);
+		}
+
+		ImGui::SameLine();
+
+		ImGui::SameLine();
+		char ascii[17];
+
+		for (int i = 0; i < 16; i++)
+		{
+			uint8_t v = mem[base + i];
+			ascii[i] = (v >= 32 && v <= 126) ? (char)v : '.';
+		}
+
+		ascii[16] = '\0';
+
+		ImGui::Text("%s", ascii);
+	}
+
+	ImGui::EndChild();
+	ImGui::End();
+}
+
+static constexpr int HISTORY_SIZE = 1024;
+void Window::DrawHistory()
+{
+    ImGui::Begin("History");
+
+    auto history = chip->GetHistory();
+    int idx = chip->GetHistoryIndex();
+
+    for (int i = 0; i < HISTORY_SIZE; i++)
+    {
+        idx = (idx - 1 + HISTORY_SIZE) % HISTORY_SIZE; // walk backwards
+
+        const auto& ins = history[idx];
+
+        if (ins.opcode == 0)
+            continue;
+
+        ImGui::Text("%04X %04X | %s", ins.pc, ins.opcode, chip->DecodeOpcode(ins.opcode).c_str());
+    }
+
+    ImGui::End();
+}
+
+void Window::DrawControls()
+{
+	ImGui::Begin("Controls");
+
+	static bool paused = false;
+	ImGui::Checkbox("Paused", &paused);
+	chip->Pause(paused);
+
+	if (ImGui::Button("Step"))
+		chip->Step();
+
+	ImGui::SameLine();
+	if (ImGui::Button("x5"))
+	{
+		for (int i = 0; i < 5; i++)
+			chip->Step();
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("x10"))
+	{
+		for (int i = 0; i < 10; i++)
+			chip->Step();
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("x50"))
+	{
+		for (int i = 0; i < 50; i++)
+			chip->Step();
+	}
+
+	static int speed = 700;
+	ImGui::SliderInt("CPU Speed (Hz)", &speed, 1, 5000);
+	chip->SetCyclesPerSecond(speed);
+
+	ImGui::End();
 }

@@ -13,7 +13,7 @@ int main()
     chip.Init();
     Window window = Window(1280, 720, &chip);
 
-    chip.LoadROM("tests/slipperyslope.ch8");
+    chip.LoadROM("tests/octojam2title.ch8");
 
     while (window.Running())
     {

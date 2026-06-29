@@ -46,4 +46,8 @@ private:
     std::vector<Color> pixels;
 
     void MakeTexture();
+    void DrawRegisters();
+    void DrawMemory();
+    void DrawHistory();
+    void DrawControls();
 };

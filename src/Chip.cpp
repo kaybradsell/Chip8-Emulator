@@ -30,35 +30,25 @@ void Chip::Init()
 
 //----------------------------------------------
 
-int Chip::GetHeight() const
-{
-    return height;
-}
-
-//----------------------------------------------
-
-int Chip::GetWidth() const
-{
-    return width;
-}
-
-//----------------------------------------------
-
 void Chip::Update()
 {
     std::chrono::high_resolution_clock::time_point nowTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> deltaTime = nowTime - lastTime;
     lastTime = nowTime;
 
-    CPUAccumulator += deltaTime.count();
     timerAccumulator += deltaTime.count();
 
-    double cycleTime = 1.0 / cyclesPerSecond;
-
-    while (CPUAccumulator >= cycleTime)
+    if (!paused)
     {
-        Cycle();
-        CPUAccumulator -= cycleTime;
+        CPUAccumulator += deltaTime.count();
+
+        double cycleTime = 1.0 / cyclesPerSecond;
+
+        while (CPUAccumulator >= cycleTime)
+        {
+            Cycle();
+            CPUAccumulator -= cycleTime;
+        }
     }
 
     while (timerAccumulator >= (1.0 / 60.0))
@@ -70,9 +60,29 @@ void Chip::Update()
 
 //----------------------------------------------
 
+void Chip::Step()
+{
+    if (!paused) return;
+
+    Cycle();
+    CPUAccumulator = 0;
+}
+
+//----------------------------------------------
+
+void Chip::Pause(bool pause)
+{
+    paused = pause;
+}
+
+//----------------------------------------------
+
 void Chip::Cycle()
 {
-    DecodeInstruction(FetchInstruction());
+    uint16_t pc = PC;
+    uint16_t opcode = FetchInstruction();
+    LogInstruction(pc, opcode);
+    DecodeInstruction(opcode);
 }
 
 //----------------------------------------------
@@ -553,6 +563,224 @@ void Chip::LoadROM(const std::string& fileName)
 const uint8_t* Chip::GetDisplay() const
 {
     return display.data();
+}
+
+//----------------------------------------------
+
+int Chip::GetHeight() const
+{
+    return height;
+}
+
+//----------------------------------------------
+
+int Chip::GetWidth() const
+{
+    return width;
+}
+
+//----------------------------------------------
+
+const uint8_t* Chip::GetMemory() const
+{
+    return memory.data();
+}
+
+//----------------------------------------------
+
+const uint8_t* Chip::GetRegisters() const
+{
+    return V.data();
+}
+
+//----------------------------------------------
+
+uint16_t Chip::GetPC() const
+{
+    return PC;
+}
+
+//----------------------------------------------
+
+uint16_t Chip::GetIndex() const
+{
+    return I;
+}
+
+//----------------------------------------------
+
+Chip::Instruction* Chip::GetHistory()
+{
+    return history;
+}
+
+//----------------------------------------------
+
+void Chip::LogInstruction(uint16_t pc, uint16_t opcode)
+{
+    history[historyIndex] = { pc, opcode };
+    historyIndex = (historyIndex + 1) % HISTORY_SIZE;
+}
+
+//----------------------------------------------
+
+int Chip::GetHistoryIndex() const
+{
+    return historyIndex;
+}
+
+//----------------------------------------------
+
+std::string Chip::DecodeOpcode(uint16_t op)
+{
+    // get the nibbles :)
+    uint8_t f = (op >> 12) & 0xF;
+    uint8_t x = (op >> 8) & 0xF;
+    uint8_t y = (op >> 4) & 0xF;
+    uint8_t n = op & 0xF;
+    uint8_t nn = op & 0xFF;
+    uint16_t nnn = op & 0x0FFF;
+
+    // huge switch-case which will EXECUTE as well.
+    switch (f)
+    {
+    case 0x0: // 0 stuff
+        if (op == 0x00E0) return "CLS";
+        if (op == 0x00EE) return "RET";
+        return "SYS";
+
+    case 0x1: // 1NNN - Jump to nnn
+        return "JP " + to_hex(nnn, 3);
+
+    case 0x2: // 2NNN - Do NNN but don't jump
+        return "CALL " + to_hex(nnn, 3);
+
+    case 0x3: // 3XNN - skip 2 PC if V[x] == NN
+        return ("SE V" + to_hex(x, 1) + ", " + to_hex(nn, 2));
+
+    case 0x4: // 4XNN - skip 2 PC if V[x] != NN
+        return ("SNE V" + to_hex(x, 1) + ", " + to_hex(nn, 2));
+
+    case 0x5: // 5XY0 - skip 2 if V[x] == V[y]
+        return ("SE V" + to_hex(x, 1) + ", V" + to_hex(y, 1));
+
+    case 0x6: // 6XNN - Set register V[x] to nn
+        return ("LD V" + to_hex(x, 1) + ", " + to_hex(nn, 2));
+
+    case 0x7: // 7XNN - Add value nn to register V[x]
+        return ("ADD V" + to_hex(x, 1) + ", " + to_hex(nn, 2));
+
+    case 0x8: // 8XYN - Arithmatic instructions
+    {
+        switch (n)
+        {
+        case 0x0: // 8XY0 - VX = VY
+            return ("LD V" + to_hex(x, 1) + ", V" + to_hex(y, 1));
+
+        case 0x1: // 8XY1 - VX = VX OR VY
+            return ("OR V" + to_hex(x, 1) + ", V" + to_hex(y, 1));
+
+        case 0x2: // 8XY2 - VX = VX AND VY
+            return ("AND V" + to_hex(x, 1) + ", V" + to_hex(y, 1));
+
+        case 0x3: // 8XY3 - VX = VX XOR VY
+            return ("XOR V" + to_hex(x, 1) + ", V" + to_hex(y, 1));
+
+        case 0x4: // 8XY4 - VX = VX + VY, sets VF to 1 if overflow.
+            return ("ADD V" + to_hex(x, 1) + ", V" + to_hex(y, 1));
+
+        case 0x5: // 8XY5 - VX = VX - VY. if X >= Y, VF = 1.
+            return ("SUB V" + to_hex(x, 1) + ", V" + to_hex(y, 1));
+
+        case 0x6: // 8XY6 - depends on COSMAC VIP. Shift V[x] one bit to right
+            return ("SHR V" + to_hex(x, 1) + "{, V" + to_hex(y, 1) + "}");
+
+        case 0x7: // 8XY7 - VX = VY - VX. if Y >= X, VF = 1.
+            return ("SUBN V" + to_hex(x, 1) + ", V" + to_hex(y, 1));
+
+        case 0xE: // 8XYE - depends on COSMAC VIP. Shift V[x] one bit to the left
+            return ("SHL V" + to_hex(x, 1) + "{, V" + to_hex(y, 1) + "}");
+
+        default:
+            return ("");
+        }
+    }
+
+    case 0x9: // 9XY0 - skip 2 if V[x] != V[y]
+        return ("SNE V" + to_hex(x, 1) + ", V" + to_hex(y, 1));
+
+    case 0xA: // ANNN - Set I to nnn
+        return ("LD I" + to_hex(I, 1) + ", " + to_hex(nnn, 3));
+
+    case 0xB: // BNNN/BXNN - former for Cosmac, latter for S-CHIP
+        if (cosmacVIPMode) return ("JP V0, " + to_hex(nnn + V[0], 3));
+        else return ("JP V" + to_hex(x, 1) + ", " + to_hex(nnn + V[x], 3));
+
+    case 0xC: // CXNN - random. V[x] = nn + random.
+        return ("RND V" + to_hex(x, 1) + ", " + to_hex(nn, 2) + " + RND");
+
+    case 0xD: // DXYN - draw sprite
+        return ("DRW V" + to_hex(x, 1) + ", V" + to_hex(y, 1) + ", " + to_hex(n, 1));
+
+    case 0xE: // EXNN - key presses
+    {
+        switch (nn)
+        {
+        case 0x9E: // EX9E - PC + 2 if VX is pressed
+            return ("SKP V" + to_hex(x, 1));
+
+        case 0xA1: // EXA1 - PC + 2 if VX NOT pressed
+            return ("SKNP V" + to_hex(x, 1));
+
+        default:
+            return ("");
+        }
+    }
+
+    case 0xF: // FXNN - misc shit
+    {
+        switch (nn)
+        {
+        case 0x07:
+            return ("LD V" + to_hex(x, 1) + ", DT");
+
+        case 0x0A:
+            return ("LD V" + to_hex(x, 1) + ", K");
+
+        case 0x15:
+            return ("LD DT, V" + to_hex(x, 1));
+
+        case 0x18:
+            return ("LD ST, V" + to_hex(x, 1));
+
+        case 0x1E:
+            return ("ADD I" + to_hex(I, 1) + ", V" + to_hex(x, 1));
+
+        case 0x29:
+            return ("LD F, V" + to_hex(x, 1));
+
+        case 0x33:
+            return ("LD B, V" + to_hex(x, 1));
+
+        case 0x55:
+            return ("LD [I" + to_hex(I, 1) + "], V" + to_hex(x, 1));
+
+        case 0x65:
+            return ("LD V" + to_hex(x, 1) + ", [I" + to_hex(I, 1) + "]");
+        }
+    }
+    }
+}
+
+//----------------------------------------------
+
+#include <sstream>
+#include <iomanip>
+std::string Chip::to_hex(int value, int width)
+{
+    std::ostringstream ss;
+    ss << std::uppercase << std::hex << std::setw(width) << std::setfill('0') << value;
+    return ss.str();
 }
 
 //----------------------------------------------

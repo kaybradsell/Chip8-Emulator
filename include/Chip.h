@@ -18,16 +18,23 @@
 #include <stack>
 #include <chrono>
 #include <string>
+#include <vector>
 
 //----------------------------------------------
 
 class Chip
 {
 public:
+	struct Instruction
+	{
+		uint16_t pc;
+		uint16_t opcode;
+	};
+
 	Chip(double cycles, bool cosmacVIP);
 
 	/** Init
-	* @brief - Initialises all components of this emulator 
+	* @brief - Initialises all components of this emulator
 	**/
 	void Init();
 
@@ -36,6 +43,10 @@ public:
 	* @note - Not frame dependent
 	**/
 	void Update();
+
+	void Pause(bool pause);
+
+	void Step();
 
 	/** Set Key
 	* @brief - Updates key to new state
@@ -73,18 +84,26 @@ public:
 	int GetWidth() const;
 
 	const uint8_t* GetDisplay() const;
+	const uint8_t* GetMemory() const;
+	const uint8_t* GetRegisters() const;
+	uint16_t GetPC() const;
+	uint16_t GetIndex() const;
+
+	Chip::Instruction* GetHistory();
+	int GetHistoryIndex() const;
+	std::string DecodeOpcode(uint16_t op);
 
 private:
 	static const int height = 32;
 	static const int width = 64;
 	std::array<uint8_t, 4096> memory{};			// the cool 4KB RAM
-	std::array<uint8_t, width * height> display{};		// cool 64x32 display.
+	std::array<uint8_t, width* height> display{};		// cool 64x32 display.
 	std::array<uint8_t, 16> V{};				// V0 - VF general purpose variables register
 	uint16_t I = 0;								// index register for pointing at mem
 	uint16_t PC = 0x200;						// points at current instruction in mem
 	double CPUAccumulator = 0.0;				// tracks cpu timer
 	double cyclesPerSecond = 700.0;				// instructions per second
-// TODO: some programs may cause stack overflow so add a limit to stack if encountered!
+	// TODO: some programs may cause stack overflow so add a limit to stack if encountered!
 	std::stack<uint16_t> stack;					// the 16-bit address saving stack.
 
 	uint8_t delayTimer = 0;						// 60fps delay counter
@@ -97,6 +116,11 @@ private:
 
 	bool newDraw = false;						// tracks if display should update
 	bool cosmacVIPMode = false;					// toggles opcodes for COSMAC VIP interpreter instead.
+	bool paused = false;
+
+	static constexpr int HISTORY_SIZE = 1024;
+	Instruction history[HISTORY_SIZE];
+	int historyIndex = 0;
 
 	/** Load Font
 	* @brief - One-time load for font into memory
@@ -170,6 +194,10 @@ private:
 	* @note - please have pointed I to the sprite you want to draw in memory
 	**/
 	void DrawSprite(uint8_t x, uint8_t y, uint8_t h);
+
+	void LogInstruction(uint16_t pc, uint16_t opcode);
+
+	std::string to_hex(int value, int width);
 };
 
 //----------------------------------------------
