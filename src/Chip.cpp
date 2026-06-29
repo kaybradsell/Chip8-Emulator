@@ -1,6 +1,7 @@
 //----------------------------------------------
 
 #include <Chip.h>
+#include <stdexcept>
 
 //----------------------------------------------
 
@@ -18,31 +19,66 @@ void Chip::Init()
 
 void Chip::Update()
 {
-    // timing wise, uhhh make it configurable.
-    // 700 instructions per second is apparently fine.
-
-    // Fetch current instruction
-    // Decode the instruction
-    // Execute the instruction
-
     std::chrono::high_resolution_clock::time_point nowTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> deltaTime = nowTime - lastTime;
     lastTime = nowTime;
 
-    accumulator += deltaTime.count();
+    CPUAccumulator += deltaTime.count();
+    timerAccumulator += deltaTime.count();
 
-    while (accumulator >= (1.0 / 60.0))
+    double cycleTime = 1.0 / cyclesPerSecond;
+
+    while (CPUAccumulator >= cycleTime)
+    {
+        Cycle();
+        CPUAccumulator -= cycleTime;
+    }
+
+    while (timerAccumulator >= (1.0 / 60.0))
     {
         Tick();
-        accumulator -= (1.0 / 60.0);
+        timerAccumulator -= (1.0 / 60.0);
     }
+}
+
+//----------------------------------------------
+
+void Chip::Cycle()
+{
+    // Fetch current instruction
+    uint16_t instruction = FetchInstruction();
+
+    // Decode the instruction
+    // Execute the instruction
+}
+
+//----------------------------------------------
+
+uint16_t Chip::FetchInstruction()
+{
+    // check if PC goes out of bounds.
+    if (PC + 1 >= memory.size())
+        throw std::runtime_error("CHIP: PC out of bounds.");
+
+    // read where PC is pointing, + 1, join, then PC++ ++
+    uint8_t first = memory[PC];
+    uint8_t second = memory[PC + 1];
+
+    PC += 2;
+
+    return (static_cast<uint16_t>(first) << 8) | second;
 }
 
 //----------------------------------------------
 
 void Chip::Tick()
 {
-    
+    // reduce timers
+    if (delayTimer > 0)
+        delayTimer--;
+
+    if (soundTimer > 0)
+        soundTimer--;
 }
 
 //----------------------------------------------
@@ -84,6 +120,16 @@ void Chip::LoadFont()
 void Chip::SetKey(uint8_t key, bool pressed)
 {
     keys[key] = pressed ? 1 : 0;
+}
+
+//----------------------------------------------
+
+void Chip::SetCyclesPerSecond(double cycles)
+{
+    if (cycles <= 0)
+        throw std::invalid_argument("CHIP: Cycles per Second cannot be <= 0.");
+
+    cyclesPerSecond = cycles;
 }
 
 //----------------------------------------------

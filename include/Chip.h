@@ -41,18 +41,26 @@ public:
 	**/
 	void SetKey(uint8_t key, bool pressed);
 
+	/** Set Cycles Per Second
+	* @brief - Changes the amount of instructions done per second
+	* @param - double cycles
+	**/
+	void SetCyclesPerSecond(double cycles);
+
 private:
 	std::array<uint8_t, 4096> memory{};			// the cool 4KB RAM
 	std::array<uint8_t, 64 * 32> display{};		// cool 64x32 display.
 	std::array<uint8_t, 16> V{};				// V0 - VF general purpose variables register
 	uint16_t I = 0;								// index register for pointing at mem
-	uint16_t pc = 0x200;						// points at current instruction in mem
+	uint16_t PC = 0x200;						// points at current instruction in mem
+	double CPUAccumulator = 0.0;				// tracks cpu timer
+	double cyclesPerSecond = 700.0;				// instructions per second
 // TODO: some programs may cause stack overflow so add a limit to stack if encountered!
 	std::stack<uint16_t> stack;					// the 16-bit address saving stack.
 	uint8_t delayTimer = 0;						// 60fps delay counter
 	uint8_t soundTimer = 0;						// 60fps audio counter
 	std::chrono::high_resolution_clock::time_point lastTime; // tracks the time from last frame
-	double accumulator = 0.0;					// tracks elapsed time
+	double timerAccumulator = 0.0;				// tracks timer timer
 	std::array<uint8_t, 16> keys{};				// key state tracker
 
 	/** Load Font
@@ -66,6 +74,13 @@ private:
 	* @note - Decrements timers as well.
 	**/
 	void Tick();
+
+	/** Cycle
+	* @brief - Handles every 1/CyclesPerSecond instructions
+	**/
+	void Cycle();
+
+	uint16_t FetchInstruction();
 };
 
 //----------------------------------------------
