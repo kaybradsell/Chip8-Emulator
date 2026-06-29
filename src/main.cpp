@@ -2,15 +2,19 @@
 //
 
 #include <iostream>
-#include "Chip.h"
+#include <Chip.h>
+#include <Input.h>
 
 int main()
 {
     Chip chip = Chip();
     chip.Init();
 
+    Input input = Input(&chip);
+
     while (true)
     {
+        input.Poll();
         chip.Update();
     }
 }

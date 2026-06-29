@@ -1,16 +1,29 @@
-#include "Chip.h"
+//----------------------------------------------
 
-int num = 0;
+#include <Chip.h>
+
+//----------------------------------------------
 
 void Chip::Init()
 {
+    std::cout << "[CHIP-8] Starting Init...\n";
+
     lastTime = std::chrono::high_resolution_clock::now();
     LoadFont(); // load in the cool fonts :D
+
+    std::cout << "[CHIP-8] Finished Init! Enjoy :D\n";
 }
+
+//----------------------------------------------
 
 void Chip::Update()
 {
-    //std::cout << "Updating!\n";
+    // timing wise, uhhh make it configurable.
+    // 700 instructions per second is apparently fine.
+
+    // Fetch current instruction
+    // Decode the instruction
+    // Execute the instruction
 
     std::chrono::high_resolution_clock::time_point nowTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> deltaTime = nowTime - lastTime;
@@ -25,12 +38,16 @@ void Chip::Update()
     }
 }
 
+//----------------------------------------------
+
 void Chip::Tick()
 {
-    std::cout << "Tick " << num++ << "\n";
+    
 }
 
-// the font set used for Chip-8, which is read into 050-09F
+//----------------------------------------------
+
+// the font set used for Chip-8, which is read into 050-09F (from 000 rn)
 static std::array<uint8_t, 80> fontset{
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -52,8 +69,21 @@ static std::array<uint8_t, 80> fontset{
 
 void Chip::LoadFont()
 {
+    std::cout << "[CHIP-8] Loading in fontset...\n";
+
     for (int i = 0; i < fontset.size(); i++)
     {
         memory[i] = fontset[i];
     }
+
+    std::cout << "[CHIP-8] Finished loading in fontset.\n";
 }
+
+//----------------------------------------------
+
+void Chip::SetKey(uint8_t key, bool pressed)
+{
+    keys[key] = pressed ? 1 : 0;
+}
+
+//----------------------------------------------
