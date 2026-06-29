@@ -16,5 +16,6 @@ int main()
     {
         input.Poll();
         chip.Update();
+        chip.PrintDisplay();
     }
 }

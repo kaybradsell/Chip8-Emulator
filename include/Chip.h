@@ -47,9 +47,13 @@ public:
 	**/
 	void SetCyclesPerSecond(double cycles);
 
+	void PrintDisplay();
+
 private:
+	static const int height = 32;
+	static const int width = 64;
 	std::array<uint8_t, 4096> memory{};			// the cool 4KB RAM
-	std::array<uint8_t, 64 * 32> display{};		// cool 64x32 display.
+	std::array<uint8_t, width * height> display{};		// cool 64x32 display.
 	std::array<uint8_t, 16> V{};				// V0 - VF general purpose variables register
 	uint16_t I = 0;								// index register for pointing at mem
 	uint16_t PC = 0x200;						// points at current instruction in mem
@@ -62,6 +66,7 @@ private:
 	std::chrono::high_resolution_clock::time_point lastTime; // tracks the time from last frame
 	double timerAccumulator = 0.0;				// tracks timer timer
 	std::array<uint8_t, 16> keys{};				// key state tracker
+	bool newDraw = false;						// tracks if display should update
 
 	/** Load Font
 	* @brief - One-time load for font into memory
@@ -81,6 +86,10 @@ private:
 	void Cycle();
 
 	uint16_t FetchInstruction();
+	void DecodeInstruction(const uint16_t& instruction);
+
+	void ClearDisplay();
+	void DrawDisplay(uint8_t x, uint8_t y, uint8_t h);
 };
 
 //----------------------------------------------
