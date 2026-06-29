@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <Chip.h>
-#include <Input.h>
 
 int main()
 {
