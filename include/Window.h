@@ -43,6 +43,7 @@ private:
 
     Chip* chip = nullptr;
     RenderTexture2D screenTexture;
+    Texture2D pngTexture;
     std::vector<Color> pixels;
 
     void MakeTexture();
@@ -50,4 +51,5 @@ private:
     void DrawMemory();
     void DrawHistory();
     void DrawControls();
+    void DrawBanner();
 };

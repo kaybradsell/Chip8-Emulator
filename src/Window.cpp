@@ -9,6 +9,8 @@ Window::Window(int w, int h, Chip* chip)
 	this->chip = chip;
 	screenTexture = LoadRenderTexture(chip->GetWidth(), chip->GetHeight());
 	pixels.resize(chip->GetWidth() * chip->GetHeight());
+
+	pngTexture = LoadTexture("assets/KaramelBanner2.png");
 }
 
 bool Window::Running()
@@ -35,6 +37,7 @@ void Window::Display()
 	DrawMemory();
 	DrawHistory();
 	DrawControls();
+	DrawBanner();
 
 	rlImGuiEnd();
 
@@ -175,5 +178,13 @@ void Window::DrawControls()
 	ImGui::SliderInt("CPU Speed (Hz)", &speed, 1, 5000);
 	chip->SetCyclesPerSecond(speed);
 
+	ImGui::End();
+}
+
+void Window::DrawBanner()
+{
+	ImGui::Begin("Banner", nullptr, ImGuiWindowFlags_NoTitleBar);
+	ImVec2 space = ImGui::GetContentRegionAvail();
+	ImGui::Image((ImTextureID)(intptr_t)pngTexture.id, space);
 	ImGui::End();
 }
