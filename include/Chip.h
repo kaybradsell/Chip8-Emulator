@@ -81,11 +81,15 @@ private:
 	double cyclesPerSecond = 700.0;				// instructions per second
 // TODO: some programs may cause stack overflow so add a limit to stack if encountered!
 	std::stack<uint16_t> stack;					// the 16-bit address saving stack.
+
 	uint8_t delayTimer = 0;						// 60fps delay counter
 	uint8_t soundTimer = 0;						// 60fps audio counter
 	std::chrono::high_resolution_clock::time_point lastTime; // tracks the time from last frame
 	double timerAccumulator = 0.0;				// tracks timer timer
-	std::array<uint8_t, 16> keys{};				// key state tracker
+
+	uint16_t keys = 0;							// 16b tracking the 16 keys this frame
+	uint16_t prevKeys = 0;						// 16b tracking the 16 keys from last frame
+
 	bool newDraw = false;						// tracks if display should update
 	bool cosmacVIPMode = false;					// toggles opcodes for COSMAC VIP interpreter instead.
 
@@ -120,7 +124,33 @@ private:
 	**/
 	void DecodeInstruction(const uint16_t& instruction);
 
+	/** Execute Opcode 0x0
+	* @brief - Executes the 0x0 family of opcodes depending on instruction
+	* @param - uint16_t instruction
+	**/
+	void ExecuteOpcode0x0(const uint16_t& instruction);
 
+	/** Execute Opcode 0x8
+	* @brief - Executes the 0x8 family of opcodes depending on last nibble (n)
+	* @param - uint8_t x
+	* @param - uint8_t y
+	* @param - uint8_t n
+	**/
+	void ExecuteOpcode0x8(const uint8_t& x, const uint8_t& y, const uint8_t& n);
+
+	/** Execute Opcode 0xE
+	* @brief - Executes the 0xE family of opcodes depending on last two nibbles
+	* @param - uint8_t x
+	* @param - uint8_t nn
+	**/
+	void ExecuteOpcode0xE(const uint8_t& x, const uint8_t& nn);
+
+	/** Execute Opcode 0xF
+	* @brief - Executes the 0xF family of opcodes depending on last two nibbles
+	* @param - uint8_t x
+	* @param - uint8_t nn
+	**/
+	void ExecuteOpcode0xF(const uint8_t& x, const uint8_t& nn);
 
 	/** Clear Display
 	* @brief - sets display to be all 0s, clearing the screen

@@ -4,6 +4,9 @@
 #include <stdexcept>
 #include <fstream>
 #include <vector>
+#include <random>
+#include <ctime>
+#include <bitset>
 
 //----------------------------------------------
 
@@ -49,6 +52,8 @@ void Chip::Update()
         Tick();
         timerAccumulator -= (1.0 / 60.0);
     }
+
+    prevKeys = keys;
 }
 
 //----------------------------------------------
@@ -91,21 +96,7 @@ void Chip::DecodeInstruction(const uint16_t& instruction)
     switch (f)
     {
     case 0x0: // 0 stuff
-        switch (instruction)
-        {
-        case 0x00E0: // clear screen
-            ClearDisplay();
-            break;
-
-        case 0x00EE: // return to PC from stack
-            if (stack.empty())
-                throw std::runtime_error("CHIP: Can't return when stack is empty.");
-
-            PC = stack.top();
-            stack.pop();
-            break;
-
-        }
+        ExecuteOpcode0x0(instruction);
         break;
 
     case 0x1: // 1NNN - Jump to nnn
@@ -141,54 +132,7 @@ void Chip::DecodeInstruction(const uint16_t& instruction)
         break;
 
     case 0x8: // 8XYN - Arithmatic instructions
-        switch (n) // N (last nibble) determines instruction
-        {
-        case 0x0: // 8XY0 - VX = VY
-            V[x] = V[y];
-            break;
-
-        case 0x1: // 8XY1 - VX = VX OR VY
-            V[x] = V[x] | V[y];
-            break;
-
-        case 0x2: // 8XY2 - VX = VX AND VY
-            V[x] = V[x] & V[y];
-            break;
-
-        case 0x3: // 8XY3 - VX = VX XOR VY
-            V[x] = V[x] ^ V[y];
-            break;
-
-        case 0x4: // 8XY4 - VX = VX + VY, sets VF to 1 if overflow.
-        {
-            uint16_t result = V[x] + V[y];
-            V[0xF] = (result > 255) ? 1 : 0;
-            V[x] = result; // only grabs last 8 bits from result.
-            break;
-        }
-
-        case 0x5: // 8XY5 - VX = VX - VY. if X >= Y, VF = 1.
-            V[0xF] = (V[x] >= V[y]) ? 1 : 0;
-            V[x] -= V[y];
-            break;
-
-        case 0x6: // 8XY6 - depends on COSMAC VIP. Shift V[x] one bit to right
-            if (cosmacVIPMode) V[x] = V[y];
-            V[0xF] = V[x] & 0x1;
-            V[x] >>= 1;
-            break;
-
-        case 0x7: // 8XY7 - VX = VY - VX. if Y >= X, VF = 1.
-            V[0xF] = (V[y] >= V[x]) ? 1 : 0;
-            V[x] = V[y] - V[x];
-            break;
-
-        case 0xE: // 8XYE - depends on COSMAC VIP. Shift V[x] one bit to the left
-            if (cosmacVIPMode) V[x] = V[y];
-            V[0xF] = V[x] >> 7;
-            V[x] <<= 1;
-            break;
-        }
+        ExecuteOpcode0x8(x, y, n);
         break;
 
     case 0x9: // 9XY0 - skip 2 if V[x] != V[y]
@@ -200,12 +144,214 @@ void Chip::DecodeInstruction(const uint16_t& instruction)
         I = nnn;
         break;
 
-    case 0xD:
+    case 0xB: // BNNN/BXNN - former for Cosmac, latter for S-CHIP
+    {
+        uint16_t location = (cosmacVIPMode) ? nnn + V[0] : nnn + V[x];
+        location = location & 0x0FFF;
+        PC = location;
+        break;
+    }
+
+    case 0xC: // CXNN - random. V[x] = nn + random.
+        V[x] = (std::rand() & 0xFF) & nn;
+        break;
+
+    case 0xD: // DXYN - draw sprite
         DrawSprite(x, y, n);
+        break;
+
+    case 0xE: // EXNN - key presses
+        ExecuteOpcode0xE(x, nn);
+        break;
+
+    case 0xF: // FXNN - misc shit
+        ExecuteOpcode0xF(x, nn);
         break;
 
     default:
         break;
+    }
+}
+
+//----------------------------------------------
+
+void Chip::ExecuteOpcode0x0(const uint16_t& instruction)
+{
+    switch (instruction)
+    {
+    case 0x00E0: // clear screen
+        ClearDisplay();
+        break;
+
+    case 0x00EE: // return to PC from stack
+        if (stack.empty())
+            throw std::runtime_error("CHIP: Can't return when stack is empty.");
+
+        PC = stack.top();
+        stack.pop();
+        break;
+    }
+}
+
+//----------------------------------------------
+
+void Chip::ExecuteOpcode0x8(const uint8_t& x, const uint8_t& y, const uint8_t& n)
+{
+    switch (n) // N (last nibble) determines instruction
+    {
+    case 0x0: // 8XY0 - VX = VY
+        V[x] = V[y];
+        break;
+
+    case 0x1: // 8XY1 - VX = VX OR VY
+        V[x] = V[x] | V[y];
+        break;
+
+    case 0x2: // 8XY2 - VX = VX AND VY
+        V[x] = V[x] & V[y];
+        break;
+
+    case 0x3: // 8XY3 - VX = VX XOR VY
+        V[x] = V[x] ^ V[y];
+        break;
+
+    case 0x4: // 8XY4 - VX = VX + VY, sets VF to 1 if overflow.
+    {
+        uint16_t result = V[x] + V[y];
+        V[0xF] = (result > 255) ? 1 : 0;
+        V[x] = result; // only grabs last 8 bits from result.
+        break;
+    }
+
+    case 0x5: // 8XY5 - VX = VX - VY. if X >= Y, VF = 1.
+        V[0xF] = (V[x] >= V[y]) ? 1 : 0;
+        V[x] -= V[y];
+        break;
+
+    case 0x6: // 8XY6 - depends on COSMAC VIP. Shift V[x] one bit to right
+        if (cosmacVIPMode) V[x] = V[y];
+        V[0xF] = V[x] & 0x1;
+        V[x] >>= 1;
+        break;
+
+    case 0x7: // 8XY7 - VX = VY - VX. if Y >= X, VF = 1.
+        V[0xF] = (V[y] >= V[x]) ? 1 : 0;
+        V[x] = V[y] - V[x];
+        break;
+
+    case 0xE: // 8XYE - depends on COSMAC VIP. Shift V[x] one bit to the left
+        if (cosmacVIPMode) V[x] = V[y];
+        V[0xF] = V[x] >> 7;
+        V[x] <<= 1;
+        break;
+    }
+}
+
+//----------------------------------------------
+
+void Chip::ExecuteOpcode0xE(const uint8_t& x, const uint8_t& nn)
+{
+    switch (nn)
+    {
+    case 0x9E: // EX9E - PC + 2 if VX is pressed
+        if (keys & (1 << V[x]))
+            PC += 2;
+        break;
+    
+    case 0xA1: // EXA1 - PC + 2 if VX NOT pressed
+        if (!(keys & (1 << V[x])))
+            PC += 2;
+        break;
+    }
+}
+
+//----------------------------------------------
+
+void Chip::ExecuteOpcode0xF(const uint8_t& x, const uint8_t& nn)
+{
+    switch (nn)
+    {
+    case 0x07: // FX07 - sets V[x] to delay timer
+        V[x] = delayTimer;
+        break;
+
+    case 0x15: // FX15 - sets delay timer to V[x]
+        delayTimer = V[x];
+        break;
+
+    case 0x18: // FX18 - sets sound timer to V[x]
+        soundTimer = V[x];
+        break;
+
+    case 0x1E: // FX1E - adds V[x] to I. If COSMAC, do not affect V[F], else do.
+    {
+        uint16_t result = V[x] + I;
+        if (!cosmacVIPMode)
+            V[0xF] = (result > 0x0FFF) ? 1 : 0;
+        I = result & 0x0FFF;
+        break;
+    }
+
+    case 0x0A: // FX0A - wait until key press.
+    {
+        PC -= 2;
+
+        if (cosmacVIPMode)
+        {
+            // TODO: implement COSMAC VIP mode where it waits for press and release
+        }
+
+        uint16_t pressed = keys & ~prevKeys;
+
+        if (pressed)
+        {
+            for (int i = 0; i < 16; i++)
+            {
+                if (pressed & (1 << i))
+                {
+                    V[x] = i;
+                    break;
+                }
+            }
+        }
+
+        break;
+    }
+
+    case 0x29: // FX29 - Point I to font specified in V[x]
+        I = 0x50 + (V[x] * 5);
+        break;
+
+    case 0x33: // FX33 - Binary-coded decimal conversion. V[x] -> 3 decimal digits. Store those at I.
+    {
+        uint8_t value = V[x];
+
+        memory[I] = value / 100;
+        memory[I + 1] = (value / 10) % 10;
+        memory[I + 2] = value % 10;
+
+        break;
+    }
+    
+    case 0x55: // FX55 - store V0 - VX (inc) into I, I++, I++, etc. If cosmac, I = new, else I = old I
+    {
+        size_t amt = x;
+        for (int i = 0; i <= amt; i++)
+            memory[I + i] = V[i];
+
+        if (cosmacVIPMode) I += amt + 1;
+        break;
+    }
+
+    case 0x65: // FX65 - load V0 - VX (inc) from I, I++, I++, etc. If cosmac, I = new, else I = old I
+    {
+        size_t amt = x;
+        for (int i = 0; i <= amt; i++)
+            V[i] = memory[I + i];
+
+        if (cosmacVIPMode) I += amt + 1;
+        break;
+    }
     }
 }
 
@@ -261,7 +407,10 @@ void Chip::LoadFont()
 
 void Chip::SetKey(uint8_t key, bool pressed)
 {
-    keys[key] = pressed ? 1 : 0;
+    if (pressed)
+        keys |= (1 << key);
+    else
+        keys &= ~(1 << key);
 }
 
 //----------------------------------------------
