@@ -17,12 +17,15 @@
 #include <iostream>
 #include <stack>
 #include <chrono>
+#include <string>
 
 //----------------------------------------------
 
 class Chip
 {
 public:
+	Chip(double cycles, bool cosmacVIP);
+
 	/** Init
 	* @brief - Initialises all components of this emulator 
 	**/
@@ -47,7 +50,11 @@ public:
 	**/
 	void SetCyclesPerSecond(double cycles);
 
+	void SetCosmacVIPMode(bool cosmacVIP);
+
 	void PrintDisplay();
+
+	void LoadROM(const std::string& fileName);
 
 private:
 	static const int height = 32;
@@ -67,6 +74,7 @@ private:
 	double timerAccumulator = 0.0;				// tracks timer timer
 	std::array<uint8_t, 16> keys{};				// key state tracker
 	bool newDraw = false;						// tracks if display should update
+	bool cosmacVIPMode = false;					// toggles opcodes for COSMAC VIP interpreter instead.
 
 	/** Load Font
 	* @brief - One-time load for font into memory
@@ -89,7 +97,8 @@ private:
 	void DecodeInstruction(const uint16_t& instruction);
 
 	void ClearDisplay();
-	void DrawDisplay(uint8_t x, uint8_t y, uint8_t h);
+	void DrawSprite
+	(uint8_t x, uint8_t y, uint8_t h);
 };
 
 //----------------------------------------------

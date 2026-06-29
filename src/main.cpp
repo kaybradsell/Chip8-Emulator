@@ -7,10 +7,12 @@
 
 int main()
 {
-    Chip chip = Chip();
+    Chip chip = Chip(700, false);
     chip.Init();
 
     Input input = Input(&chip);
+
+    chip.LoadROM("tests/test_opcode.ch8");
 
     while (true)
     {
