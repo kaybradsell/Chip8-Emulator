@@ -218,32 +218,47 @@ void Chip::ExecuteOpcode0x8(const uint8_t& x, const uint8_t& y, const uint8_t& n
     case 0x4: // 8XY4 - VX = VX + VY, sets VF to 1 if overflow.
     {
         uint16_t result = V[x] + V[y];
-        V[0xF] = (result > 255) ? 1 : 0;
-        V[x] = result; // only grabs last 8 bits from result.
+        V[x] = result; // only grabs lst 8 bits from result.
+        V[0xF] = (result > 0xFF) ? 1 : 0;
         break;
     }
 
     case 0x5: // 8XY5 - VX = VX - VY. if X >= Y, VF = 1.
-        V[0xF] = (V[x] >= V[y]) ? 1 : 0;
-        V[x] -= V[y];
+    {
+        uint8_t vx = V[x];
+        uint8_t vy = V[y];
+
+        V[x] = vx - vy;
+        V[0xF] = (vx >= vy) ? 1 : 0;
         break;
+    }
+        
 
     case 0x6: // 8XY6 - depends on COSMAC VIP. Shift V[x] one bit to right
-        if (cosmacVIPMode) V[x] = V[y];
-        V[0xF] = V[x] & 0x1;
-        V[x] >>= 1;
+    {
+        uint8_t val = cosmacVIPMode ? V[x] : V[y];
+        V[x] = val >> 1;
+        V[0xF] = val & 0x1;
         break;
+    }
 
     case 0x7: // 8XY7 - VX = VY - VX. if Y >= X, VF = 1.
-        V[0xF] = (V[y] >= V[x]) ? 1 : 0;
-        V[x] = V[y] - V[x];
+    {
+        uint8_t vx = V[x];
+        uint8_t vy = V[y];
+
+        V[x] = vy - vx;
+        V[0xF] = (vy >= vx) ? 1 : 0;
         break;
+    }
 
     case 0xE: // 8XYE - depends on COSMAC VIP. Shift V[x] one bit to the left
-        if (cosmacVIPMode) V[x] = V[y];
-        V[0xF] = V[x] >> 7;
-        V[x] <<= 1;
+    {
+        uint8_t val = cosmacVIPMode ? V[x] : V[y];
+        V[x] = val << 1;
+        V[0xF] = (val & 0x80) >> 7;
         break;
+    }
     }
 }
 

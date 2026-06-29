@@ -14,7 +14,7 @@ int main()
 
     Input input = Input(&chip);
 
-    chip.LoadROM("tests/test_opcode.ch8");
+    chip.LoadROM("tests/5-quirks.ch8");
 
     while (true)
     {

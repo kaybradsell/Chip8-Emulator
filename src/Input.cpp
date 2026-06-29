@@ -82,7 +82,6 @@ void Input::Poll()
 		int key = _getch();
 
 		KeyDown(key);
-		KeyUp(key);
 	}
 }
 
