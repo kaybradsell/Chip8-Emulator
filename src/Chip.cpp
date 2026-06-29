@@ -143,26 +143,50 @@ void Chip::DecodeInstruction(const uint16_t& instruction)
     case 0x8: // 8XYN - Arithmatic instructions
         switch (n) // N (last nibble) determines instruction
         {
-        case 0: // 8XY0 - VX = VY
+        case 0x0: // 8XY0 - VX = VY
             V[x] = V[y];
             break;
 
-        case 1: // 8XY1 - VX = VX OR VY
+        case 0x1: // 8XY1 - VX = VX OR VY
             V[x] = V[x] | V[y];
             break;
 
-        case 2: // 8XY2 - VX = VX AND VY
+        case 0x2: // 8XY2 - VX = VX AND VY
             V[x] = V[x] & V[y];
             break;
 
-        case 3: // 8XY3 - VX = VX XOR VY
+        case 0x3: // 8XY3 - VX = VX XOR VY
             V[x] = V[x] ^ V[y];
             break;
 
-        case 4: // 8XY4 - VX = VX + VY, sets VF to 1 if overflow.
+        case 0x4: // 8XY4 - VX = VX + VY, sets VF to 1 if overflow.
+        {
             uint16_t result = V[x] + V[y];
             V[0xF] = (result > 255) ? 1 : 0;
             V[x] = result; // only grabs last 8 bits from result.
+            break;
+        }
+
+        case 0x5: // 8XY5 - VX = VX - VY. if X >= Y, VF = 1.
+            V[0xF] = (V[x] >= V[y]) ? 1 : 0;
+            V[x] -= V[y];
+            break;
+
+        case 0x6: // 8XY6 - depends on COSMAC VIP. Shift V[x] one bit to right
+            if (cosmacVIPMode) V[x] = V[y];
+            V[0xF] = V[x] & 0x1;
+            V[x] >>= 1;
+            break;
+
+        case 0x7: // 8XY7 - VX = VY - VX. if Y >= X, VF = 1.
+            V[0xF] = (V[y] >= V[x]) ? 1 : 0;
+            V[x] = V[y] - V[x];
+            break;
+
+        case 0xE: // 8XYE - depends on COSMAC VIP. Shift V[x] one bit to the left
+            if (cosmacVIPMode) V[x] = V[y];
+            V[0xF] = V[x] >> 7;
+            V[x] <<= 1;
             break;
         }
         break;
@@ -316,6 +340,8 @@ void Chip::PrintDisplay()
 void Chip::LoadROM(const std::string& fileName)
 {
     std::cout << "[CHIP-8] Reading in ROM " << fileName << ".\n";
+
+    PC = 0x200; // reset PC to '0'
 
     std::ifstream file(fileName, std::ios::binary);
 

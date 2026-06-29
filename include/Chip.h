@@ -50,10 +50,23 @@ public:
 	**/
 	void SetCyclesPerSecond(double cycles);
 
+	/** Set COSMAC VIP mode
+	* @brief - changes certain opcode behaviours depending on this mode.
+	* @param - bool cosmacVIP
+	* @note - it false, it will instead use SUPER-CHIP/CHIP-48 behaviours
+	**/
 	void SetCosmacVIPMode(bool cosmacVIP);
 
+	/** Print Display
+	* @brief - temporary display into CLI from display
+	* @note - gonna nuke this and use raylib or something + imgui.
+	**/
 	void PrintDisplay();
 
+	/** Load ROM
+	* @brief - Loads a ROM into memory
+	* @param -
+	**/
 	void LoadROM(const std::string& fileName);
 
 private:
@@ -93,12 +106,35 @@ private:
 	**/
 	void Cycle();
 
+	/** Fetch Instructions
+	* @brief - From current PC, returns the uint16 from memory (high and low byte)
+	* @return - uint16_t
+	* @note - increases PC by 2.
+	**/
 	uint16_t FetchInstruction();
+
+	/** Decode Instruction
+	* @brief - Decodes and Executes instruction given the parameter.
+	* @param - uint16_t
+	* @note - Different versions of opcodes can be ran depending on mode
+	**/
 	void DecodeInstruction(const uint16_t& instruction);
 
+
+
+	/** Clear Display
+	* @brief - sets display to be all 0s, clearing the screen
+	**/
 	void ClearDisplay();
-	void DrawSprite
-	(uint8_t x, uint8_t y, uint8_t h);
+	
+	/** Draw Sprite
+	* @brief - Draws sprite given data in memory at I, with h height, at x/y.
+	* @param - uint8_t x
+	* @param - uint8_t y
+	* @param - uint8_t h
+	* @note - please have pointed I to the sprite you want to draw in memory
+	**/
+	void DrawSprite(uint8_t x, uint8_t y, uint8_t h);
 };
 
 //----------------------------------------------
