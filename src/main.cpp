@@ -7,7 +7,7 @@
 int main()
 {
     srand(time(0));
-
+    
     Chip chip = Chip(700, false);
     chip.Init();
 
