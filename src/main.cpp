@@ -12,13 +12,10 @@ int main()
     Chip chip = Chip(700, false);
     chip.Init();
 
-    Input input = Input(&chip);
-
     chip.LoadROM("tests/5-quirks.ch8");
 
     while (true)
     {
-        input.Poll();
         chip.Update();
         chip.PrintDisplay();
     }
