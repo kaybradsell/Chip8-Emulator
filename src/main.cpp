@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <Chip.h>
+#include <Window.h>
 
 int main()
 {
@@ -10,12 +11,14 @@ int main()
     
     Chip chip = Chip(700, false);
     chip.Init();
+    Window window = Window(1280, 720, &chip);
 
-    chip.LoadROM("tests/5-quirks.ch8");
+    chip.LoadROM("tests/slipperyslope.ch8");
 
-    while (true)
+    while (window.Running())
     {
+        window.Keys();
         chip.Update();
-        chip.PrintDisplay();
+        window.Display();
     }
 }

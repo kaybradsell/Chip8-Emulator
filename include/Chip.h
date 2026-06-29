@@ -69,6 +69,11 @@ public:
 	**/
 	void LoadROM(const std::string& fileName);
 
+	int GetHeight() const;
+	int GetWidth() const;
+
+	const uint8_t* GetDisplay() const;
+
 private:
 	static const int height = 32;
 	static const int width = 64;

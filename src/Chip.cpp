@@ -30,6 +30,20 @@ void Chip::Init()
 
 //----------------------------------------------
 
+int Chip::GetHeight() const
+{
+    return height;
+}
+
+//----------------------------------------------
+
+int Chip::GetWidth() const
+{
+    return width;
+}
+
+//----------------------------------------------
+
 void Chip::Update()
 {
     std::chrono::high_resolution_clock::time_point nowTime = std::chrono::high_resolution_clock::now();
@@ -52,8 +66,6 @@ void Chip::Update()
         Tick();
         timerAccumulator -= (1.0 / 60.0);
     }
-
-    prevKeys = keys;
 }
 
 //----------------------------------------------
@@ -171,6 +183,8 @@ void Chip::DecodeInstruction(const uint16_t& instruction)
     default:
         break;
     }
+
+    prevKeys = keys;
 }
 
 //----------------------------------------------
@@ -236,7 +250,7 @@ void Chip::ExecuteOpcode0x8(const uint8_t& x, const uint8_t& y, const uint8_t& n
 
     case 0x6: // 8XY6 - depends on COSMAC VIP. Shift V[x] one bit to right
     {
-        uint8_t val = cosmacVIPMode ? V[x] : V[y];
+        uint8_t val = cosmacVIPMode ? V[y] : V[x];
         V[x] = val >> 1;
         V[0xF] = val & 0x1;
         break;
@@ -254,7 +268,7 @@ void Chip::ExecuteOpcode0x8(const uint8_t& x, const uint8_t& y, const uint8_t& n
 
     case 0xE: // 8XYE - depends on COSMAC VIP. Shift V[x] one bit to the left
     {
-        uint8_t val = cosmacVIPMode ? V[x] : V[y];
+        uint8_t val = cosmacVIPMode ? V[y] : V[x];
         V[x] = val << 1;
         V[0xF] = (val & 0x80) >> 7;
         break;
@@ -325,6 +339,7 @@ void Chip::ExecuteOpcode0xF(const uint8_t& x, const uint8_t& nn)
                 if (pressed & (1 << i))
                 {
                     V[x] = i;
+                    PC += 2;
                     break;
                 }
             }
@@ -531,6 +546,13 @@ void Chip::LoadROM(const std::string& fileName)
     }
 
     std::cout << "[CHIP-8] Loaded in ROM " << fileName << " (" << rom.size() << " bytes)\n";
+}
+
+//----------------------------------------------
+
+const uint8_t* Chip::GetDisplay() const
+{
+    return display.data();
 }
 
 //----------------------------------------------

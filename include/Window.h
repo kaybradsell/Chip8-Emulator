@@ -4,6 +4,8 @@
 #include <rlImGui.h>
 #include <imGui.h>
 #include <Chip.h>
+#include <Vector2.h>
+#include <vector>
 
 class Window
 {
@@ -40,4 +42,8 @@ private:
     };
 
     Chip* chip = nullptr;
+    RenderTexture2D screenTexture;
+    std::vector<Color> pixels;
+
+    void MakeTexture();
 };
