@@ -51,5 +51,6 @@ private:
     void DrawMemory();
     void DrawHistory();
     void DrawControls();
+    void DrawLoader();
     void DrawBanner();
 };

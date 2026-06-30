@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="external\imgui\ImGuiFileDialog.cpp" />
     <ClCompile Include="external\imgui\imgui\imgui.cpp" />
     <ClCompile Include="external\imgui\imgui\imgui_draw.cpp" />
     <ClCompile Include="external\imgui\imgui\imgui_tables.cpp" />
@@ -29,6 +30,7 @@
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="external\imgui\ImGuiFileDialogConfig.h" />
     <ClInclude Include="include\Chip.h" />
     <ClInclude Include="include\Vector2.h" />
     <ClInclude Include="include\Window.h" />

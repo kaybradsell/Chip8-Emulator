@@ -1,4 +1,5 @@
 #include "Window.h"
+#include <ImGuiFileDialog.h>
 
 Window::Window(int w, int h, Chip* chip)
 {
@@ -37,6 +38,7 @@ void Window::Display()
 	DrawMemory();
 	DrawHistory();
 	DrawControls();
+	DrawLoader();
 	DrawBanner();
 
 	rlImGuiEnd();
@@ -147,7 +149,7 @@ void Window::DrawControls()
 	ImGui::Begin("Controls");
 
 	static bool paused = false;
-	ImGui::Checkbox("Paused", &paused);
+	ImGui::Checkbox("Pause", &paused);
 	chip->Pause(paused);
 
 	if (ImGui::Button("Step"))
@@ -186,5 +188,33 @@ void Window::DrawBanner()
 	ImGui::Begin("Banner", nullptr, ImGuiWindowFlags_NoTitleBar);
 	ImVec2 space = ImGui::GetContentRegionAvail();
 	ImGui::Image((ImTextureID)(intptr_t)pngTexture.id, space);
+	ImGui::End();
+}
+
+void Window::DrawLoader()
+{
+	ImGui::Begin("ROM Loader");
+	
+	ImGui::SameLine();
+	if (ImGui::Button("Open"))
+	{
+		IGFD::FileDialogConfig config;
+		config.path = "\ROMS";
+		ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".ch8", config);
+	}
+
+	if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey"))
+	{
+		if (ImGuiFileDialog::Instance()->IsOk())
+		{
+			std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+			std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+
+			chip->LoadROM(filePathName);
+		}
+
+		ImGuiFileDialog::Instance()->Close();
+	}
+
 	ImGui::End();
 }

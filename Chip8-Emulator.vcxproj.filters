@@ -39,6 +39,9 @@
     <ClCompile Include="external\imgui\imgui\imgui_widgets.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
+    <ClCompile Include="external\imgui\ImGuiFileDialog.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Chip.h">
@@ -49,6 +52,9 @@
     </ClInclude>
     <ClInclude Include="include\Vector2.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="external\imgui\ImGuiFileDialogConfig.h">
+      <Filter>Resource Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

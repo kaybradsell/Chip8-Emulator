@@ -116,7 +116,8 @@ private:
 
 	bool newDraw = false;						// tracks if display should update
 	bool cosmacVIPMode = false;					// toggles opcodes for COSMAC VIP interpreter instead.
-	bool paused = false;
+	bool paused = false;						// toggles if emulator is paused or not
+	bool ROMLoaded = false;						// tracks if a ROM has been loaded and can run
 
 	static constexpr int HISTORY_SIZE = 1024;
 	Instruction history[HISTORY_SIZE];

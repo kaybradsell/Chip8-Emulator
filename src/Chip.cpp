@@ -79,6 +79,8 @@ void Chip::Pause(bool pause)
 
 void Chip::Cycle()
 {
+    if (!ROMLoaded) return;
+
     uint16_t pc = PC;
     uint16_t opcode = FetchInstruction();
     LogInstruction(pc, opcode);
@@ -529,8 +531,12 @@ void Chip::PrintDisplay()
 void Chip::LoadROM(const std::string& fileName)
 {
     std::cout << "[CHIP-8] Reading in ROM " << fileName << ".\n";
+    ROMLoaded = false;
 
     PC = 0x200; // reset PC to '0'
+    display.fill(0); // reset display
+    memory.fill(0); // reset memory
+    LoadFont();
 
     std::ifstream file(fileName, std::ios::binary);
 
@@ -555,6 +561,7 @@ void Chip::LoadROM(const std::string& fileName)
         memory[0x200 + i] = rom[i];
     }
 
+    ROMLoaded = true;
     std::cout << "[CHIP-8] Loaded in ROM " << fileName << " (" << rom.size() << " bytes)\n";
 }
 
