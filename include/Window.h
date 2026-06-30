@@ -43,8 +43,9 @@ private:
 
     Chip* chip = nullptr;
     RenderTexture2D screenTexture;
-    Texture2D pngTexture;
     std::vector<Color> pixels;
+    Color on = WHITE;
+    Color off = BLACK;
 
     void MakeTexture();
     void DrawRegisters();
@@ -52,5 +53,11 @@ private:
     void DrawHistory();
     void DrawControls();
     void DrawLoader();
-    void DrawBanner();
+    void DrawConfig();
+    void DrawColourPicker();
+
+    ImColor to_imcolor(Color col);
+    Color to_rlcolor(ImColor col);
+    void LoadConfig();
+    void SaveConfig();
 };

@@ -30,7 +30,6 @@
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="external\imgui\ImGuiFileDialogConfig.h" />
     <ClInclude Include="include\Chip.h" />
     <ClInclude Include="include\Vector2.h" />
     <ClInclude Include="include\Window.h" />

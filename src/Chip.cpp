@@ -435,14 +435,10 @@ static const uint16_t FONT_START = 0x50;
 
 void Chip::LoadFont()
 {
-    std::cout << "[CHIP-8] Loading in fontset...\n";
-
     for (int i = 0; i < FONTSET.size(); i++)
     {
         memory[FONT_START + i] = FONTSET[i];
     }
-
-    std::cout << "[CHIP-8] Finished loading in fontset.\n";
 }
 
 //----------------------------------------------
@@ -531,7 +527,11 @@ void Chip::PrintDisplay()
 void Chip::LoadROM(const std::string& fileName)
 {
     std::cout << "[CHIP-8] Reading in ROM " << fileName << ".\n";
+
     ROMLoaded = false;
+    currentROM = fileName;
+    for (int i = 0; i < HISTORY_SIZE; i++)
+        history[i] = { 0,0 };
 
     PC = 0x200; // reset PC to '0'
     display.fill(0); // reset display
@@ -541,7 +541,7 @@ void Chip::LoadROM(const std::string& fileName)
     std::ifstream file(fileName, std::ios::binary);
 
     if (!file)
-        throw std::runtime_error("CHIP: Cannot read " + fileName + ".");
+        throw std::runtime_error("CHIP-8: Cannot read " + fileName + ".");
 
     // read size!
     file.seekg(0, std::ios::end);
@@ -554,7 +554,7 @@ void Chip::LoadROM(const std::string& fileName)
 
     // checks
     if (rom.size() > memory.size() - 0x200)
-        throw std::runtime_error("CHIP: ROM " + fileName + " is too large to read!");
+        throw std::runtime_error("[CHIP-8]: ROM " + fileName + " is too large to read!");
 
     for (size_t i = 0; i < rom.size(); i++)
     {
@@ -563,6 +563,16 @@ void Chip::LoadROM(const std::string& fileName)
 
     ROMLoaded = true;
     std::cout << "[CHIP-8] Loaded in ROM " << fileName << " (" << rom.size() << " bytes)\n";
+}
+
+//----------------------------------------------
+
+void Chip::ResetROM()
+{
+    if (!ROMLoaded || currentROM == "")
+        throw std::runtime_error("[CHIP-8]: Cannot reset ROM when ROM is not loaded!");
+
+    LoadROM(currentROM);
 }
 
 //----------------------------------------------

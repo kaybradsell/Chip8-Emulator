@@ -80,6 +80,8 @@ public:
 	**/
 	void LoadROM(const std::string& fileName);
 
+	void ResetROM();
+
 	int GetHeight() const;
 	int GetWidth() const;
 
@@ -118,6 +120,7 @@ private:
 	bool cosmacVIPMode = false;					// toggles opcodes for COSMAC VIP interpreter instead.
 	bool paused = false;						// toggles if emulator is paused or not
 	bool ROMLoaded = false;						// tracks if a ROM has been loaded and can run
+	std::string currentROM = "";				// tracks current ROM to reload
 
 	static constexpr int HISTORY_SIZE = 1024;
 	Instruction history[HISTORY_SIZE];
